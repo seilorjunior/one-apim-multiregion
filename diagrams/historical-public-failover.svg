@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title description">
+  <title id="title">Historical public-mode workload failover evidence</title>
+  <desc id="description">Reconstructed from the project runbook, not an original captured screenshot. Retired apim-west-lab, November 3 2026, restricted public APIM origins: West US 3 workload interruption yielded five consecutive Central US responses in 42 seconds with zero failed samples, but Central US already served initial samples so no traffic transition was independently established. Central US workload interruption yielded five consecutive West US 3 responses in 102 seconds with three timeouts. Results include Run Command overhead, are not exact RTO and do not prove private-path failover.</desc>
+  <defs>
+    <style>text{font-family:"Noto Sans",sans-serif;fill:#183153}.title{font-size:27px;font-weight:700}.heading{font-size:20px;font-weight:700}.body{font-size:17px}.small{font-size:15px;fill:#475569}</style>
+  </defs>
+  <rect width="1200" height="720" fill="#fff"/>
+  <text x="600" y="43" text-anchor="middle" class="title">Historical public-mode failover - November 3, 2026</text>
+  <text x="600" y="78" text-anchor="middle" class="body">Retired environment: apim-west-lab | Reconstructed from documented results</text>
+  <rect x="70" y="112" width="1060" height="92" rx="12" fill="#fff7ed" stroke="#f59e0b"/>
+  <text x="600" y="149" text-anchor="middle" class="heading">Historical evidence only - not current private ingress</text>
+  <text x="600" y="180" text-anchor="middle" class="small">Front Door to restricted public APIM origins; no regional Application Gateways in this path</text>
+  <rect x="70" y="244" width="500" height="218" rx="12" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="95" y="280" class="heading">Case 1: West US 3 workload stopped</text>
+  <text x="95" y="321" class="body">Serving region: Central US</text>
+  <text x="95" y="357" class="body">Five consecutive responses: 42 seconds</text>
+  <text x="95" y="393" class="body">Failed samples: 0</text>
+  <text x="95" y="431" class="small">Continued service; Central US already served baseline.</text>
+  <rect x="630" y="244" width="500" height="218" rx="12" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="655" y="280" class="heading">Case 2: Central US workload stopped</text>
+  <text x="655" y="321" class="body">Serving region: West US 3</text>
+  <text x="655" y="357" class="body">Five consecutive responses: 102 seconds</text>
+  <text x="655" y="393" class="body">Failed samples: 3 timeouts</text>
+  <text x="655" y="431" class="small">Availability recovered; failover was not impact-free.</text>
+  <rect x="70" y="502" width="1060" height="121" rx="12" fill="#f0fdf4" stroke="#15803d"/>
+  <text x="95" y="539" class="heading">Documented final state</text>
+  <text x="95" y="575" class="body">Both deployments restored to two replicas; rollouts and final smoke test passed.</text>
+  <text x="95" y="604" class="small">New temporary role assignments removed and verified. No actual Azure regional outage was simulated.</text>
+  <text x="600" y="665" text-anchor="middle" class="body">Elapsed measurements include Run Command overhead and sampling - not exact RTO or an SLA.</text>
+  <text x="600" y="696" text-anchor="middle" class="small">These older tests preceded the current stronger acceptance checks; no new run or private-path evidence is implied.</text>
+</svg>

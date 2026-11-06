@@ -1,0 +1,17 @@
+{
+  "name": "one-apim-multiregion-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Reproducible architecture diagram tooling for the Azure APIM lab",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "diagrams": "node scripts/render-diagrams.mjs",
+    "diagrams:check": "node scripts/render-diagrams.mjs --check",
+    "test:diagrams": "node --test tests/render-diagrams.test.mjs"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "2.6.2"
+  }
+}

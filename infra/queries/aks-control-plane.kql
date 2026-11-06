@@ -1,0 +1,6 @@
+// Control-plane events are not pod HTTP access logs or proof of backend readiness.
+AzureDiagnostics
+| where TimeGenerated > ago(1h)
+| where ResourceProvider =~ "MICROSOFT.CONTAINERSERVICE" and Category == "kube-apiserver"
+| summarize ControlPlaneEvents=count() by bin(TimeGenerated, 5m), ResourceId
+| order by TimeGenerated desc

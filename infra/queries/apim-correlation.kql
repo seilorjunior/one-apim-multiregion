@@ -1,0 +1,55 @@
+// Existing diagnostic settings use AzureDiagnostics, not resource-specific tables.
+// Filter CorrelationId to the client response GUID when investigating a request.
+// Prefer client response, then backend request, then backend response evidence.
+// Never substitute APIM provider IDs for a missing propagated header.
+let SafeCorrelation = (value:string) {
+    let candidate=tolower(value);
+    iff(strlen(candidate) == 36 and candidate matches regex @"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", candidate, "")
+};
+AzureDiagnostics
+| where TimeGenerated > ago(1h)
+| where ResourceProvider =~ "MICROSOFT.APIMANAGEMENT" and Category == "GatewayLogs"
+| extend Overflow=column_ifexists("AdditionalFields", dynamic({}))
+| extend ResponseHeaders=parse_json(tolower(tostring(column_ifexists("responseHeaders_s", "{}")))),
+    BackendHeaders=parse_json(tolower(tostring(column_ifexists("backendRequestHeaders_s", "{}")))),
+    BackendResponseHeaders=parse_json(tolower(tostring(column_ifexists("backendResponseHeaders_s", "{}")))),
+    OverflowResponseHeaders=parse_json(tolower(coalesce(tostring(Overflow["responseHeaders_s"]), tostring(Overflow["responseHeaders"])))),
+    OverflowBackendHeaders=parse_json(tolower(coalesce(tostring(Overflow["backendRequestHeaders_s"]), tostring(Overflow["backendRequestHeaders"])))),
+    OverflowBackendResponseHeaders=parse_json(tolower(coalesce(tostring(Overflow["backendResponseHeaders_s"]), tostring(Overflow["backendResponseHeaders"]))))
+| extend CorrelationId=coalesce(
+    SafeCorrelation(tostring(column_ifexists("responseHeaders_X_Correlation_ID_g", ""))),
+    SafeCorrelation(tostring(Overflow["responseHeaders_X_Correlation_ID_g"])),
+    SafeCorrelation(tostring(Overflow["responseHeaders_X_Correlation_ID"])),
+    SafeCorrelation(tostring(ResponseHeaders["x-correlation-id"])),
+    SafeCorrelation(tostring(OverflowResponseHeaders["x-correlation-id"])),
+    SafeCorrelation(tostring(column_ifexists("backendRequestHeaders_X_Correlation_ID_g", ""))),
+    SafeCorrelation(tostring(Overflow["backendRequestHeaders_X_Correlation_ID_g"])),
+    SafeCorrelation(tostring(Overflow["backendRequestHeaders_X_Correlation_ID"])),
+    SafeCorrelation(tostring(BackendHeaders["x-correlation-id"])),
+    SafeCorrelation(tostring(OverflowBackendHeaders["x-correlation-id"])),
+    SafeCorrelation(tostring(column_ifexists("backendResponseHeaders_X_Correlation_ID_g", ""))),
+    SafeCorrelation(tostring(Overflow["backendResponseHeaders_X_Correlation_ID_g"])),
+    SafeCorrelation(tostring(Overflow["backendResponseHeaders_X_Correlation_ID"])),
+    SafeCorrelation(tostring(BackendResponseHeaders["x-correlation-id"])),
+    SafeCorrelation(tostring(OverflowBackendResponseHeaders["x-correlation-id"])))
+| project TimeGenerated, ResourceId,
+    Region=coalesce(tostring(column_ifexists("responseHeaders_X_Lab_Gateway_Region_s", "")),
+        tostring(Overflow["responseHeaders_X_Lab_Gateway_Region_s"]),
+        tostring(Overflow["responseHeaders_X_Lab_Gateway_Region"]),
+        tostring(ResponseHeaders["x-lab-gateway-region"]),
+        tostring(OverflowResponseHeaders["x-lab-gateway-region"]),
+        tostring(column_ifexists("region_s", ""))),
+    BackendRegion=coalesce(tostring(column_ifexists("backendResponseHeaders_X_Lab_Backend_Region_s", "")),
+        tostring(Overflow["backendResponseHeaders_X_Lab_Backend_Region_s"]),
+        tostring(Overflow["backendResponseHeaders_X_Lab_Backend_Region"]),
+        tostring(BackendResponseHeaders["x-lab-backend-region"]),
+        tostring(OverflowBackendResponseHeaders["x-lab-backend-region"])),
+    Operation=tostring(column_ifexists("operationId_s", "")),
+    ResponseCode=toint(column_ifexists("responseCode_d", real(null))),
+    BackendResponseCode=toint(column_ifexists("backendResponseCode_d", real(null))),
+    DurationMs=todouble(column_ifexists("totalTime_d", real(null))),
+    CorrelationId,
+    ApimRequestId=tostring(column_ifexists("requestId_g", "")),
+    ApimCorrelationId=tostring(column_ifexists("correlationId_g", ""))
+| order by TimeGenerated desc
+| take 200

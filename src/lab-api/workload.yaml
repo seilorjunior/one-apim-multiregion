@@ -1,0 +1,196 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apim-lab
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-tls
+  namespace: apim-lab
+type: kubernetes.io/tls
+data:
+  tls.crt: __TLS_CERTIFICATE__
+  tls.key: __TLS_KEY__
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-nginx
+  namespace: apim-lab
+data:
+  default.conf: |
+    map $request_id $lab_generated_correlation_id {
+        "~^(........)(....)(....)(....)(............)$" "$1-$2-$3-$4-$5";
+    }
+    map $http_x_correlation_id $lab_correlation_id {
+        default $lab_generated_correlation_id;
+        "~\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\z" $http_x_correlation_id;
+    }
+    map $uri $lab_route {
+        default other;
+        /health/ready readiness;
+        /whoami whoami;
+    }
+    log_format lab_json escape=json
+        '{"time":"$time_iso8601","correlationId":"$lab_correlation_id",'
+        '"region":"__REGION__","cluster":"__CLUSTER__","pod":"$hostname",'
+        '"method":"$request_method","route":"$lab_route","status":$status,'
+        '"durationSeconds":$request_time,"bytes":$body_bytes_sent}';
+    access_log /dev/stdout lab_json;
+    # Default nginx error lines can contain raw request targets; status remains in access logs.
+    error_log /dev/null;
+    server {
+        listen 8443 ssl;
+        server_name br.api.lab.internal us.api.lab.internal;
+        ssl_certificate /etc/nginx/tls/tls.crt;
+        ssl_certificate_key /etc/nginx/tls/tls.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        server_tokens off;
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        add_header X-Lab-Backend-Region "__REGION__" always;
+        add_header X-Correlation-ID $lab_correlation_id always;
+        location = /health/ready {
+            return 200 '{"status":"ready","region":"__REGION__"}';
+        }
+        location = /whoami {
+            return 200 '{"region":"__REGION__","cluster":"__CLUSTER__","pod":"$hostname"}';
+        }
+        location / {
+            return 404 '{"error":"not found"}';
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-api
+  namespace: apim-lab
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: lab-api
+  template:
+    metadata:
+      annotations:
+        checksum/lab-workload: "__WORKLOAD_HASH__"
+      labels:
+        app: lab-api
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: lab-api
+                topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: lab-api
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: lab-api
+      containers:
+        - name: api
+          image: nginxinc/nginx-unprivileged:1.28-alpine
+          ports:
+            - containerPort: 8443
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8443
+              scheme: HTTPS
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
+            - name: tls
+              mountPath: /etc/nginx/tls
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: lab-nginx
+        - name: tls
+          secret:
+            secretName: backend-tls
+            defaultMode: 0440
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: lab-api
+  namespace: apim-lab
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: lab-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab-api
+  namespace: apim-lab
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: backend
+    service.beta.kubernetes.io/azure-load-balancer-ipv4: __BACKEND_IP__
+spec:
+  type: LoadBalancer
+  loadBalancerSourceRanges:
+    - __APIM_SUBNET__
+  selector:
+    app: lab-api
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443

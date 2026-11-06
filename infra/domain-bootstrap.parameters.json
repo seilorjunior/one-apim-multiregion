@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "authorizePurchases": { "value": false },
+    "domainName": { "value": "" },
+    "primaryLocation": { "value": "westus3" },
+    "secondaryLocation": { "value": "centralus" },
+    "registrationContact": { "value": {} },
+    "domainPurchaseConsent": { "value": {} },
+    "certificateIssuerPrincipalId": { "value": "" },
+    "autoRenewDomain": { "value": false },
+    "autoRenewCertificate": { "value": false }
+  }
+}

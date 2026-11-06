@@ -1,0 +1,33 @@
+<policies>
+  <inbound>
+    <base />
+    <choose>
+      <when condition='@(context.Deployment.Region.Replace(" ", "").ToLowerInvariant() == "__PRIMARY_REGION__")'>
+        <set-backend-service backend-id="aks-br" />
+      </when>
+      <otherwise>
+        <set-backend-service backend-id="aks-us" />
+      </otherwise>
+    </choose>
+  </inbound>
+  <backend>
+    <base />
+  </backend>
+  <outbound>
+    <base />
+    <choose>
+      <when condition='@((context.Operation.Id == "readiness-get" || context.Operation.Id == "readiness-head") &amp;&amp; context.Response.StatusCode == 200 &amp;&amp; context.Response.Headers.GetValueOrDefault("X-Lab-Backend-Region", "").Replace(" ", "").ToLowerInvariant() != context.Deployment.Region.Replace(" ", "").ToLowerInvariant())'>
+        <set-status code="503" reason="Regional backend mismatch" />
+      </when>
+    </choose>
+    <set-header name="X-Lab-Gateway-Region" exists-action="override">
+      <value>@(context.Deployment.Region)</value>
+    </set-header>
+    <set-header name="Cache-Control" exists-action="override">
+      <value>no-store</value>
+    </set-header>
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>

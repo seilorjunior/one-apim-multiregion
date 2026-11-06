@@ -1,0 +1,10 @@
+// Optional private-ingress tier; no events is expected in public-ingress mode.
+AzureDiagnostics
+| where TimeGenerated > ago(1h)
+| where ResourceProvider =~ "MICROSOFT.NETWORK"
+| where Category == "ApplicationGatewayAccessLog"
+| summarize Requests=count(),
+    Errors=countif(toint(column_ifexists("httpStatus_d", real(null))) >= 500),
+    P95Seconds=percentile(todouble(column_ifexists("timeTaken_d", real(null))), 95)
+    by bin(TimeGenerated, 5m), ResourceId
+| order by TimeGenerated desc

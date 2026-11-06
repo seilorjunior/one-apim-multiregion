@@ -1,0 +1,72 @@
+name: Offline validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: offline-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Bicep, scripts and tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - name: Validate reproducible diagram exports
+        run: |
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run test:diagrams
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run diagrams:check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install validation dependencies
+        run: |
+          python -m pip install -r tests/requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          az bicep install --version v0.40.2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $bicepDirectory = Join-Path $HOME '.azure/bin'
+          $env:PATH = "$bicepDirectory$([IO.Path]::PathSeparator)$env:PATH"
+          $bicepDirectory | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          bicep --version
+      - name: Validate Bicep and PowerShell contracts
+        run: |
+          New-Item -ItemType Directory -Force test-results | Out-Null
+          ./tests/Test-Local.ps1 *>&1 | Tee-Object -FilePath test-results/local-validation.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run all offline Python and cross-shell tests
+        run: python -m xmlrunner discover -s tests -p 'test_*.py' -v -o test-results
+      - name: Preserve validation results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: validation-${{ matrix.os }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 14

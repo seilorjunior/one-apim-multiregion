@@ -1,0 +1,31 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Multi-region lab API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/whoami": {
+      "get": {
+        "operationId": "whoami",
+        "responses": { "200": { "description": "Region and pod serving this request" } }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "readiness-get",
+        "responses": {
+          "200": { "description": "Regional workload ready and backend region matches the APIM gateway" },
+          "503": { "description": "Backend region is missing or does not match the APIM gateway" }
+        }
+      },
+      "head": {
+        "operationId": "readiness-head",
+        "responses": {
+          "200": { "description": "Front Door health probe with verified backend region" },
+          "503": { "description": "Backend region is missing or does not match the APIM gateway" }
+        }
+      }
+    }
+  }
+}

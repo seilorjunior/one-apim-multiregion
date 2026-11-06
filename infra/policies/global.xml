@@ -1,0 +1,36 @@
+<policies>
+  <inbound>
+    <set-variable name="labCorrelationId" value='@{
+        var candidate = context.Request.Headers.GetValueOrDefault("X-Correlation-ID", "");
+        return candidate.Length == 36 &amp;&amp; System.Text.RegularExpressions.Regex.IsMatch(candidate, @"\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\z")
+            ? candidate.ToLowerInvariant() : Guid.NewGuid().ToString();
+    }' />
+    <set-header name="X-Correlation-ID" exists-action="override">
+      <value>@((string)context.Variables["labCorrelationId"])</value>
+    </set-header>
+    <choose>
+      <when condition='@(context.Request.Headers.GetValueOrDefault("X-Azure-FDID", "") != "__FRONT_DOOR_ID__")'>
+        <return-response>
+          <set-status code="403" reason="Forbidden" />
+          <set-header name="X-Correlation-ID" exists-action="override">
+            <value>@((string)context.Variables["labCorrelationId"])</value>
+          </set-header>
+          <set-body>Only the configured Front Door profile is allowed.</set-body>
+        </return-response>
+      </when>
+    </choose>
+  </inbound>
+  <backend>
+    <forward-request timeout="20" />
+  </backend>
+  <outbound>
+    <set-header name="X-Correlation-ID" exists-action="override">
+      <value>@((string)context.Variables["labCorrelationId"])</value>
+    </set-header>
+  </outbound>
+  <on-error>
+    <set-header name="X-Correlation-ID" exists-action="override">
+      <value>@(context.Variables.GetValueOrDefault&lt;string&gt;("labCorrelationId", context.RequestId.ToString()))</value>
+    </set-header>
+  </on-error>
+</policies>

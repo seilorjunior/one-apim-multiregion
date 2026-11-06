@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1050" viewBox="0 0 1400 1050" role="img" aria-labelledby="title description">
+  <title id="title">Private lab deployment lifecycle with azd and purchase-safe certificate bootstrap</title>
+  <desc id="description">Configure a new environment or select apim-private-lab. Reuse an existing issued public wildcard certificate before read-only preview. If a certificate is missing, preview stops; a separately authorized bootstrap must run before preview can pass. Preprovision checks existing AKS, node pools and gateway runtime state without starting resources. Stopped compute requires an explicit StartResources option on Prepare-Lab, Provision-Lab or Test-Readiness. Bicep provisions the private architecture. Postprovision verifies infrastructure readiness, certificate access and explicit Front Door Private Link approval before workload application, then verifies nodes, rollout, internal service endpoints, API and fresh regional health. No step implies automatic purchase, approval or renewal.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#2563eb"/></marker>
+    <style>
+      text { font-family: "Noto Sans", sans-serif; fill: #183153; }
+      .title { font-size: 28px; font-weight: 700; }
+      .heading { font-size: 20px; font-weight: 700; }
+      .body { font-size: 16px; }
+      .small { font-size: 14px; fill: #475569; }
+      .flow { fill: none; stroke: #2563eb; stroke-width: 2; marker-end: url(#arrow); }
+      .retry { fill: none; stroke: #64748b; stroke-width: 2; stroke-dasharray: 6 4; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1400" height="1050" fill="#fff"/>
+  <text x="700" y="44" text-anchor="middle" class="title">Deploy the private multi-region lab</text>
+  <text x="700" y="73" text-anchor="middle" class="body">Preparation and preview are not deployment | azd up creates billable resources</text>
+  <rect x="40" y="104" width="400" height="146" rx="12" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="65" y="136" class="heading">1. Select and configure</text>
+  <text x="65" y="165" class="body">az login + azd auth login</text>
+  <text x="65" y="191" class="body">azd env select apim-private-lab</text>
+  <text x="65" y="220" class="small">New lab? Use a new environment and fresh TLS.</text>
+  <rect x="500" y="104" width="400" height="146" rx="12" fill="#f0fdf4" stroke="#15803d"/>
+  <text x="525" y="136" class="heading">2. Resolve the public certificate</text>
+  <text x="525" y="165" class="body">Existing: Active + Issued + synced binding</text>
+  <text x="525" y="191" class="body">Keep authorizePurchases=false for reuse.</text>
+  <text x="525" y="220" class="small">Missing? Complete authorized bootstrap first.</text>
+  <rect x="960" y="104" width="400" height="146" rx="12" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="985" y="136" class="heading">3. Review read-only Azure preview</text>
+  <text x="985" y="165" class="body">Provision-Lab.ps1 -Preview</text>
+  <text x="985" y="191" class="body">or Provision-Lab.sh --preview</text>
+  <text x="985" y="220" class="small">No purchases, compute starts or provisioning.</text>
+  <path d="M440 176 H498" class="flow"/>
+  <path d="M900 176 H958" class="flow"/>
+  <path d="M1160 250 V286 H700 V320" class="flow"/>
+  <rect x="40" y="322" width="1320" height="290" rx="16" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="65" y="355" class="heading">4. azd up - authorized billable deployment</text>
+  <rect x="65" y="379" width="390" height="202" rx="10" fill="#f5f3ff" stroke="#8b5cf6"/>
+  <text x="85" y="409" class="heading">preup: optional bootstrap</text>
+  <text x="85" y="438" class="body">Reuse issued certificate without purchase.</text>
+  <text x="85" y="467" class="body">Creation needs real consent and true gate.</text>
+  <text x="85" y="496" class="body">Validate + what-if before paid submission.</text>
+  <text x="85" y="525" class="body">Wait for issuance and vault binding.</text>
+  <text x="85" y="554" class="small">Resume the same order; never buy on timeout.</text>
+  <rect x="505" y="379" width="390" height="202" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="525" y="409" class="heading">preprovision: safe checks</text>
+  <text x="525" y="438" class="body">Certificate/network metadata checks</text>
+  <text x="525" y="467" class="body">Generate environment-local backend TLS.</text>
+  <text x="525" y="496" class="body">AKS, node pools + gateways must run.</text>
+  <text x="525" y="525" class="body">No bootstrap writes or compute starts.</text>
+  <text x="525" y="554" class="small">This hook also runs during preview.</text>
+  <rect x="945" y="379" width="390" height="202" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="965" y="409" class="heading">Bicep infrastructure</text>
+  <text x="965" y="438" class="body">Front Door + two regional gateways</text>
+  <text x="965" y="467" class="body">One Internal APIM + two private AKS</text>
+  <text x="965" y="496" class="body">Local vault endpoints + isolated DNS</text>
+  <text x="965" y="525" class="body">Scoped identity/RBAC + monitoring</text>
+  <text x="965" y="554" class="small">APIM provision can take more than one hour.</text>
+  <path d="M455 475 H503" class="flow"/>
+  <path d="M895 475 H943" class="flow"/>
+  <path d="M1160 612 V648 H240 V678" class="flow"/>
+  <rect x="40" y="680" width="400" height="180" rx="12" fill="#fff7ed" stroke="#f59e0b"/>
+  <text x="65" y="712" class="heading">5. postprovision approval gate</text>
+  <text x="65" y="741" class="body">Compute, APIM, TLS + vault readiness</text>
+  <text x="65" y="770" class="body">Pending Front Door links stop publication.</text>
+  <text x="65" y="799" class="body">Provisioned infrastructure remains billed.</text>
+  <text x="65" y="832" class="small">A failed hook is not an infrastructure rollback.</text>
+  <rect x="500" y="680" width="400" height="180" rx="12" fill="#fff7ed" stroke="#f59e0b"/>
+  <text x="525" y="712" class="heading">6. Owner inspects and approves</text>
+  <text x="525" y="741" class="body">Connect-PrivateOrigins.ps1 -Approve</text>
+  <text x="525" y="770" class="body">or .sh --approve; confirm each request.</text>
+  <text x="525" y="799" class="body">Exact profile/gateway scope; 45-char marker</text>
+  <text x="525" y="832" class="small">A matching marker is not authentication.</text>
+  <rect x="960" y="680" width="400" height="180" rx="12" fill="#f0fdf4" stroke="#15803d"/>
+  <text x="985" y="712" class="heading">7. Publish, then prove health</text>
+  <text x="985" y="741" class="body">Rerun Deploy-LabApi after approval.</text>
+  <text x="985" y="770" class="body">Ready nodes, rollout, ILB + smoke tests</text>
+  <text x="985" y="799" class="body">Fresh health evidence for both origins</text>
+  <text x="985" y="832" class="small">Run disruptive failover only after healthy gates.</text>
+  <path d="M440 770 H498" class="flow"/>
+  <path d="M900 770 H958" class="flow"/>
+  <rect x="40" y="901" width="1320" height="111" rx="10" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="65" y="932" class="heading">Explicit alternatives and safety boundaries</text>
+  <text x="65" y="959" class="body">StartResources explicitly starts stopped AKS + gateways. Test-Readiness checks without redeploying; preview never starts compute.</text>
+  <text x="65" y="986" class="body">A missing certificate blocks preview. Plain azd provision only reuses/checks bootstrap. Renewals and Private Link approval are never automatic.</text>
+</svg>

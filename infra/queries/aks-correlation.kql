@@ -1,0 +1,13 @@
+// Optional: ContainerLogV2 must already be collected separately. This module does not enable it.
+// An empty result or fuzzy-source warning is NOT evidence of a healthy backend.
+union isfuzzy=true
+    (datatable(TimeGenerated:datetime, PodNamespace:string, PodName:string, ContainerName:string, LogMessage:dynamic) []),
+    (ContainerLogV2 | project TimeGenerated, PodNamespace, PodName, ContainerName, LogMessage)
+| where TimeGenerated > ago(1h) and PodNamespace == "apim-lab" and ContainerName == "api"
+| extend Entry=parse_json(tostring(LogMessage))
+| where isnotempty(Entry.correlationId)
+| project TimeGenerated, PodName, CorrelationId=tostring(Entry.correlationId),
+    Region=tostring(Entry.region), Cluster=tostring(Entry.cluster),
+    Route=tostring(Entry.route), Status=toint(Entry.status), DurationSeconds=todouble(Entry.durationSeconds)
+| order by TimeGenerated desc
+| take 200

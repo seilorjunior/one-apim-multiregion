@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": { "value": "${AZURE_ENV_NAME}" },
+    "location": { "value": "${AZURE_LOCATION}" },
+    "secondaryLocation": { "value": "${AZURE_SECONDARY_LOCATION}" },
+    "publisherName": { "value": "${APIM_PUBLISHER_NAME}" },
+    "publisherEmail": { "value": "${APIM_PUBLISHER_EMAIL}" },
+    "backendRootCertificate": { "value": "${LAB_ROOT_CERTIFICATE}" },
+    "aksVmSize": { "value": "Standard_D2s_v4" },
+    "aksAdminPrincipalId": { "value": "${AKS_ADMIN_PRINCIPAL_ID=}" },
+    "aksPrimaryAdminRoleAssignmentName": { "value": "${AKS_PRIMARY_ADMIN_ROLE_ASSIGNMENT_NAME=}" },
+    "aksSecondaryAdminRoleAssignmentName": { "value": "${AKS_SECONDARY_ADMIN_ROLE_ASSIGNMENT_NAME=}" },
+    "ingressMode": { "value": "${APP_INGRESS_MODE=public}" },
+    "gatewayNetworkMode": { "value": "${APP_GATEWAY_NETWORK_MODE=auto}" },
+    "gatewayPrimaryHost": { "value": "${APP_GATEWAY_PRIMARY_HOST=}" },
+    "gatewaySecondaryHost": { "value": "${APP_GATEWAY_SECONDARY_HOST=}" },
+    "gatewayKeyVaultName": { "value": "${APP_GATEWAY_KEY_VAULT_NAME=}" },
+    "gatewayKeyVaultResourceGroup": { "value": "${APP_GATEWAY_KEY_VAULT_RESOURCE_GROUP=}" },
+    "gatewayKeyVaultNetworkMode": { "value": "${APP_GATEWAY_KEY_VAULT_NETWORK_MODE=trusted-services}" },
+    "gatewayCertificateSecretId": { "value": "${APP_GATEWAY_CERTIFICATE_SECRET_ID=}" },
+    "enableOperationalAlerts": { "value": "${ENABLE_OPERATIONAL_ALERTS=false}" },
+    "alertNotificationEmail": { "value": "${ALERT_NOTIFICATION_EMAIL=}" },
+    "alertCertificateOrderResourceId": { "value": "${APP_GATEWAY_CERTIFICATE_ORDER_ID=}" },
+    "alertCertificateExpiryWarningDays": { "value": "${ALERT_CERTIFICATE_EXPIRY_WARNING_DAYS=30}" }
+  }
+}

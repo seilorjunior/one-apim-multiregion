@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1580" viewBox="0 0 1280 1580" role="img" aria-labelledby="title description">
+  <title id="title">Current private model: Front Door, Application Gateway, Internal APIM, private AKS and private Key Vault</title>
+  <desc id="description">Implemented private architecture for apim-private-lab in West US 3 and Central US, not evidence of a completed live deployment. Front Door Premium with WAF reaches two private Application Gateway HTTPS listeners through explicitly approved managed Private Link connections. Each gateway forwards HTTPS to its local private APIM VIP with the regional APIM hostname for Host and SNI. One classic Premium APIM service reaches local private AKS backends. A shared managed identity retrieves a public wildcard PFX through a local vault Private Endpoint in each isolated region. Separate DNS resource groups hold independent privatelink.vaultcore.azure.net views; the vault public endpoint stays Disabled. The domain, paid order and exact vault binding live in a separate retained bootstrap group. No peering or public gateway application listeners are introduced.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#166534"/></marker>
+    <marker id="blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#2563eb"/></marker>
+    <style>
+      text { font-family: "Noto Sans", sans-serif; fill: #183153; }
+      .title { font-size: 27px; font-weight: 700; }
+      .heading { font-size: 20px; font-weight: 700; }
+      .label { font-size: 17px; font-weight: 600; }
+      .detail { font-size: 15px; fill: #475569; }
+      .small { font-size: 14px; fill: #475569; }
+      .private { fill: none; stroke: #166534; stroke-width: 2.5; marker-end: url(#arrow); }
+      .public { fill: none; stroke: #2563eb; stroke-width: 2.5; marker-end: url(#blue); }
+      .configuration { fill: none; stroke: #64748b; stroke-width: 1.8; stroke-dasharray: 6 5; }
+    </style>
+  </defs>
+  <rect width="1280" height="1580" fill="#fff"/>
+  <text x="640" y="42" text-anchor="middle" class="title">Private regional ingress with one multi-region APIM</text>
+  <text x="640" y="72" text-anchor="middle" class="detail">apim-private-lab | explicit private mode | diagram is not live deployment evidence</text>
+  <rect x="450" y="101" width="380" height="58" rx="10" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="640" y="136" text-anchor="middle" class="label">Clients / applications</text>
+  <path d="M640 159 V209" class="public"/>
+  <text x="658" y="190" class="small">Public HTTPS</text>
+  <rect x="290" y="211" width="700" height="96" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="640" y="241" text-anchor="middle" class="heading">Azure Front Door Premium + WAF</text>
+  <text x="640" y="266" text-anchor="middle" class="detail">Two private origins | mandatory TLS certificate-name validation</text>
+  <text x="640" y="289" text-anchor="middle" class="detail">HEAD /lab/health/ready | active group: regional-apis-private</text>
+  <path d="M480 307 V335 H330 V375" class="private"/>
+  <path d="M800 307 V335 H950 V375" class="private"/>
+  <rect x="101" y="341" width="458" height="25" fill="#fff"/>
+  <rect x="721" y="341" width="458" height="25" fill="#fff"/>
+  <text x="330" y="360" text-anchor="middle" class="label">Approved Private Link + HTTPS</text>
+  <text x="950" y="360" text-anchor="middle" class="label">Approved Private Link + HTTPS</text>
+  <rect x="55" y="377" width="550" height="594" rx="16" fill="#f0fdf4" stroke="#86b69b" stroke-width="1.5"/>
+  <rect x="675" y="377" width="550" height="594" rx="16" fill="#f0fdf4" stroke="#86b69b" stroke-width="1.5"/>
+  <text x="330" y="409" text-anchor="middle" class="heading">West US 3 - primary VNet</text>
+  <text x="950" y="409" text-anchor="middle" class="heading">Central US - secondary VNet</text>
+  <text x="330" y="433" text-anchor="middle" class="detail">10.10.0.0/16 | no cross-region peering</text>
+  <text x="950" y="433" text-anchor="middle" class="detail">10.20.0.0/16 | no cross-region peering</text>
+  <rect x="90" y="453" width="480" height="143" rx="10" fill="#fff" stroke="#15803d"/>
+  <rect x="710" y="453" width="480" height="143" rx="10" fill="#fff" stroke="#15803d"/>
+  <text x="330" y="483" text-anchor="middle" class="heading">Application Gateway Standard_v2</text>
+  <text x="950" y="483" text-anchor="middle" class="heading">Application Gateway Standard_v2</text>
+  <text x="330" y="510" text-anchor="middle" class="detail">Private HTTPS listener: 10.10.3.10:443</text>
+  <text x="950" y="510" text-anchor="middle" class="detail">Private HTTPS listener: 10.20.3.10:443</text>
+  <text x="330" y="535" text-anchor="middle" class="detail">gw-westus3.example.com</text>
+  <text x="950" y="535" text-anchor="middle" class="detail">gw-centralus.example.com</text>
+  <text x="330" y="560" text-anchor="middle" class="small">Dedicated gateway .3.0/24 and Private Link .4.0/27 subnets</text>
+  <text x="950" y="560" text-anchor="middle" class="small">Dedicated gateway .3.0/24 and Private Link .4.0/27 subnets</text>
+  <text x="330" y="582" text-anchor="middle" class="small">Infrastructure public IP exists; no public app listener</text>
+  <text x="950" y="582" text-anchor="middle" class="small">Infrastructure public IP exists; no public app listener</text>
+  <path d="M330 596 V651" class="private"/>
+  <path d="M950 596 V651" class="private"/>
+  <text x="350" y="619" class="small">HTTPS to local private VIP</text>
+  <text x="970" y="619" class="small">HTTPS to local private VIP</text>
+  <text x="350" y="640" class="small">Regional APIM Host / SNI override</text>
+  <text x="970" y="640" class="small">Regional APIM Host / SNI override</text>
+  <rect x="90" y="655" width="480" height="99" rx="10" fill="#eef2ff" stroke="#6366f1"/>
+  <rect x="710" y="655" width="480" height="99" rx="10" fill="#eef2ff" stroke="#6366f1"/>
+  <text x="330" y="684" text-anchor="middle" class="heading">APIM regional gateway - Internal</text>
+  <text x="950" y="684" text-anchor="middle" class="heading">APIM regional gateway - Internal</text>
+  <text x="330" y="710" text-anchor="middle" class="detail">Local APIM subnet: 10.10.0.0/26</text>
+  <text x="950" y="710" text-anchor="middle" class="detail">Local APIM subnet: 10.20.0.0/26</text>
+  <text x="330" y="735" text-anchor="middle" class="detail">FDID policy + backend-region readiness check</text>
+  <text x="950" y="735" text-anchor="middle" class="detail">FDID policy + backend-region readiness check</text>
+  <path d="M570 702 H710" class="configuration"/>
+  <rect x="572" y="672" width="136" height="22" rx="4" fill="#fff"/>
+  <text x="640" y="688" text-anchor="middle" class="small">ONE APIM service</text>
+  <path d="M330 754 V811" class="private"/>
+  <path d="M950 754 V811" class="private"/>
+  <text x="350" y="787" class="small">Private HTTPS + lab backend CA</text>
+  <text x="970" y="787" class="small">Private HTTPS + lab backend CA</text>
+  <rect x="90" y="815" width="480" height="125" rx="10" fill="#fff" stroke="#15803d"/>
+  <rect x="710" y="815" width="480" height="125" rx="10" fill="#fff" stroke="#15803d"/>
+  <text x="330" y="845" text-anchor="middle" class="heading">Private AKS + sample API</text>
+  <text x="950" y="845" text-anchor="middle" class="heading">Private AKS + sample API</text>
+  <text x="330" y="872" text-anchor="middle" class="detail">br.api.lab.internal - internal LB 10.10.2.10</text>
+  <text x="950" y="872" text-anchor="middle" class="detail">us.api.lab.internal - internal LB 10.20.2.10</text>
+  <text x="330" y="898" text-anchor="middle" class="detail">Private API server | Azure RBAC | two replicas</text>
+  <text x="950" y="898" text-anchor="middle" class="detail">Private API server | Azure RBAC | two replicas</text>
+  <text x="330" y="922" text-anchor="middle" class="small">Only local APIM subnet admitted to backend service</text>
+  <text x="950" y="922" text-anchor="middle" class="small">Only local APIM subnet admitted to backend service</text>
+  <path d="M90 525 H35 V1055 H55" class="configuration"/>
+  <path d="M1190 525 H1245 V1055 H1225" class="configuration"/>
+  <rect x="55" y="1003" width="550" height="122" rx="12" fill="#f0f9ff" stroke="#0284c7"/>
+  <rect x="675" y="1003" width="550" height="122" rx="12" fill="#f0f9ff" stroke="#0284c7"/>
+  <text x="330" y="1032" text-anchor="middle" class="heading">Local vault Private Endpoint + DNS</text>
+  <text x="950" y="1032" text-anchor="middle" class="heading">Local vault Private Endpoint + DNS</text>
+  <text x="330" y="1057" text-anchor="middle" class="detail">10.10.5.0/27 | approved vault connection</text>
+  <text x="950" y="1057" text-anchor="middle" class="detail">10.20.5.0/27 | approved vault connection</text>
+  <text x="330" y="1082" text-anchor="middle" class="small">privatelink.vaultcore.azure.net | local VNet link only</text>
+  <text x="950" y="1082" text-anchor="middle" class="small">privatelink.vaultcore.azure.net | local VNet link only</text>
+  <text x="330" y="1107" text-anchor="middle" class="small">Separate DNS resource group: rg-lab-vault-dns-br*</text>
+  <text x="950" y="1107" text-anchor="middle" class="small">Separate DNS resource group: rg-lab-vault-dns-us*</text>
+  <path d="M330 1125 V1154 H500 V1180" class="private"/>
+  <path d="M950 1125 V1154 H780 V1180" class="private"/>
+  <text x="640" y="992" text-anchor="middle" class="small">Certificate retrieval through local vault endpoints | no shared DNS view</text>
+  <rect x="290" y="1184" width="700" height="110" rx="12" fill="#f5f3ff" stroke="#8b5cf6"/>
+  <text x="640" y="1214" text-anchor="middle" class="heading">Retained bootstrap group: domain + order + Key Vault</text>
+  <text x="640" y="1240" text-anchor="middle" class="detail">Public wildcard PFX | versionless gateway-origin secret | public access Disabled</text>
+  <text x="640" y="1267" text-anchor="middle" class="detail">Shared gateway identity: Secrets User | issuer identity: Secrets Officer</text>
+  <text x="640" y="1319" text-anchor="middle" class="small">* DNS group names abbreviated; full names include the environment and deterministic suffix.</text>
+  <rect x="55" y="1342" width="1170" height="88" rx="10" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="640" y="1372" text-anchor="middle" class="heading">Observability and acceptance</text>
+  <text x="640" y="1399" text-anchor="middle" class="detail">Log Analytics + diagnostics | two fresh completed one-minute buckets at Minimum 100% per origin</text>
+  <rect x="55" y="1450" width="1170" height="98" rx="10" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="640" y="1479" text-anchor="middle" class="label">azd up: reuse certificate -> provision -> explicit Private Link approval -> publish and verify</text>
+  <text x="640" y="1505" text-anchor="middle" class="detail">Purchases require explicit authorization. Preview never purchases. Automatic renewals remain disabled.</text>
+  <text x="640" y="1530" text-anchor="middle" class="detail">Public compatibility mode remains available. Incremental rollback does not remove retired billable resources.</text>
+</svg>

@@ -1,0 +1,9 @@
+// Provider-native tracking references are not APIM/AKS X-Correlation-ID values.
+AzureDiagnostics
+| where TimeGenerated > ago(1h)
+| where ResourceProvider =~ "MICROSOFT.CDN"
+| where Category in ("FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog")
+| summarize Events=count(),
+    Errors=countif(toint(column_ifexists("httpStatusCode_s", "")) >= 500)
+    by bin(TimeGenerated, 5m), ResourceId, Category
+| order by TimeGenerated desc

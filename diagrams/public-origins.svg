@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title description">
+  <title id="title">Public-origin compatibility architecture</title>
+  <desc id="description">Template-default conceptual topology: clients reach Front Door Premium with WAF, which reaches two restricted public gateways of one External classic Premium APIM service. Each regional APIM gateway calls a private AKS internal HTTPS load balancer. Brazil South and East US are default examples, not current private-environment deployment evidence. No Front Door to APIM Private Link or Application Gateway is present in this mode.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#2563eb"/></marker>
+    <style>text{font-family:"Noto Sans",sans-serif;fill:#183153}.title{font-size:27px;font-weight:700}.heading{font-size:20px;font-weight:700}.body{font-size:16px}.small{font-size:14px;fill:#475569}.flow{fill:none;stroke:#2563eb;stroke-width:2;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1200" height="760" fill="#fff"/>
+  <text x="600" y="43" text-anchor="middle" class="title">Public-origin compatibility model</text>
+  <text x="600" y="74" text-anchor="middle" class="body">Conceptual template defaults | Not the current private ingress deployment</text>
+  <rect x="400" y="104" width="400" height="65" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="600" y="144" text-anchor="middle" class="heading">Clients - HTTPS</text>
+  <path d="M600 169 V197" class="flow"/>
+  <rect x="300" y="200" width="600" height="110" rx="12" fill="#f5f3ff" stroke="#8b5cf6"/>
+  <text x="600" y="233" text-anchor="middle" class="heading">Front Door Premium + WAF Prevention</text>
+  <text x="600" y="263" text-anchor="middle" class="body">Equal-priority origins | No caching | TLS name validation</text>
+  <text x="600" y="289" text-anchor="middle" class="small">HEAD /lab/health/ready every 30 seconds</text>
+  <path d="M440 310 V340 H300 V369" class="flow"/>
+  <path d="M760 310 V340 H900 V369" class="flow"/>
+  <rect x="50" y="371" width="1100" height="130" rx="12" fill="#f0fdf4" stroke="#15803d"/>
+  <text x="600" y="400" text-anchor="middle" class="heading">ONE External classic Premium APIM service</text>
+  <text x="300" y="435" text-anchor="middle" class="body">Brazil South regional gateway</text>
+  <text x="900" y="435" text-anchor="middle" class="body">East US regional gateway</text>
+  <text x="600" y="474" text-anchor="middle" class="small">Restricted public HTTPS: AzureFrontDoor.Backend + exact X-Azure-FDID policy</text>
+  <path d="M300 501 V535" class="flow"/>
+  <path d="M900 501 V535" class="flow"/>
+  <rect x="60" y="538" width="480" height="108" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+  <rect x="660" y="538" width="480" height="108" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="300" y="573" text-anchor="middle" class="heading">Brazil VNet - private AKS</text>
+  <text x="300" y="606" text-anchor="middle" class="body">Internal HTTPS LB - two API replicas</text>
+  <text x="900" y="573" text-anchor="middle" class="heading">US VNet - private AKS</text>
+  <text x="900" y="606" text-anchor="middle" class="body">Internal HTTPS LB - two API replicas</text>
+  <text x="600" y="685" text-anchor="middle" class="body">No inter-region peering | No Front Door/APIM Private Link | No Application Gateway</text>
+  <text x="600" y="718" text-anchor="middle" class="small">Regional private DNS + validated backend TLS | Private Kubernetes API does not eliminate outbound internet dependencies</text>
+</svg>

@@ -1,0 +1,39 @@
+name: apim-multi-region-lab
+infra:
+  provider: bicep
+  path: infra
+  module: main
+hooks:
+  preup:
+    windows:
+      shell: pwsh
+      run: ./scripts/powershell/Sync-DomainBootstrap.ps1 -Provision
+      continueOnError: false
+      interactive: true
+    posix:
+      shell: sh
+      run: bash ./scripts/bash/Sync-DomainBootstrap.sh --provision
+      continueOnError: false
+      interactive: true
+  preprovision:
+    windows:
+      shell: pwsh
+      run: ./scripts/powershell/Prepare-Lab.ps1
+      continueOnError: false
+      interactive: true
+    posix:
+      shell: sh
+      run: bash ./scripts/bash/Prepare-Lab.sh
+      continueOnError: false
+      interactive: true
+  postprovision:
+    windows:
+      shell: pwsh
+      run: ./scripts/powershell/Deploy-LabApi.ps1
+      continueOnError: false
+      interactive: true
+    posix:
+      shell: sh
+      run: bash ./scripts/bash/Deploy-LabApi.sh
+      continueOnError: false
+      interactive: true
