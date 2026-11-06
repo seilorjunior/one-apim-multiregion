@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "runId": "6434b89f-a756-4a19-9f1b-b21b416ca8ce",
+  "startedAtUtc": "2026-11-05T17:33:33.091Z",
+  "completedAtUtc": "2026-11-05T17:49:53.877Z",
+  "status": "passed",
+  "exitCode": 0,
+  "ingressMode": "private",
+  "target": {
+    "key": "Primary",
+    "location": "westus3"
+  },
+  "survivor": {
+    "key": "Secondary",
+    "location": "centralus"
+  },
+  "timeoutSeconds": 600,
+  "stages": {
+    "readiness": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:33:34.456Z",
+      "completedAtUtc": "2026-11-05T17:38:07.113Z"
+    },
+    "preflightOrigins": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:38:07.583Z",
+      "completedAtUtc": "2026-11-05T17:41:32.921Z"
+    },
+    "rollouts": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:41:33.189Z",
+      "completedAtUtc": "2026-11-05T17:42:06.606Z"
+    },
+    "baseline": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:42:06.809Z",
+      "completedAtUtc": "2026-11-05T17:42:21.181Z"
+    },
+    "disruption": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:42:21.448Z",
+      "completedAtUtc": "2026-11-05T17:42:43.878Z"
+    },
+    "availability": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:42:44.168Z",
+      "completedAtUtc": "2026-11-05T17:43:58.905Z"
+    },
+    "restoration": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:43:59.281Z",
+      "completedAtUtc": "2026-11-05T17:44:10.622Z"
+    },
+    "replicaVerification": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:44:11.856Z",
+      "completedAtUtc": "2026-11-05T17:44:24.739Z"
+    },
+    "recoveryOrigins": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:44:25.009Z",
+      "completedAtUtc": "2026-11-05T17:47:20.579Z"
+    },
+    "recoverySmoke": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:47:20.855Z",
+      "completedAtUtc": "2026-11-05T17:49:53.706Z"
+    }
+  },
+  "replicas": {
+    "original": 2,
+    "stopped": 0,
+    "restored": 2
+  },
+  "evidence": "ObservedTransition",
+  "lastBaselineRegion": "westus3",
+  "samples": [
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:42:06.979Z",
+      "completedAtUtc": "2026-11-05T17:42:09.567Z",
+      "observerLatencyMs": 2588.175,
+      "status": 200,
+      "region": "westus3",
+      "error": null
+    },
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:42:09.793Z",
+      "completedAtUtc": "2026-11-05T17:42:14.436Z",
+      "observerLatencyMs": 4643.271,
+      "status": 200,
+      "region": "westus3",
+      "error": null
+    },
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:42:14.630Z",
+      "completedAtUtc": "2026-11-05T17:42:16.541Z",
+      "observerLatencyMs": 1911.916,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:42:16.803Z",
+      "completedAtUtc": "2026-11-05T17:42:18.710Z",
+      "observerLatencyMs": 1906.966,
+      "status": 200,
+      "region": "westus3",
+      "error": null
+    },
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:42:18.908Z",
+      "completedAtUtc": "2026-11-05T17:42:20.827Z",
+      "observerLatencyMs": 1919.092,
+      "status": 200,
+      "region": "westus3",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:42:44.417Z",
+      "completedAtUtc": "2026-11-05T17:43:00.064Z",
+      "observerLatencyMs": 15646.83,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:43:05.951Z",
+      "completedAtUtc": "2026-11-05T17:43:21.391Z",
+      "observerLatencyMs": 15440.013,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:43:26.842Z",
+      "completedAtUtc": "2026-11-05T17:43:29.328Z",
+      "observerLatencyMs": 2485.971,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:43:34.569Z",
+      "completedAtUtc": "2026-11-05T17:43:36.653Z",
+      "observerLatencyMs": 2083.784,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:43:42.019Z",
+      "completedAtUtc": "2026-11-05T17:43:44.114Z",
+      "observerLatencyMs": 2094.838,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:43:49.400Z",
+      "completedAtUtc": "2026-11-05T17:43:51.398Z",
+      "observerLatencyMs": 1997.906,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:43:56.707Z",
+      "completedAtUtc": "2026-11-05T17:43:58.678Z",
+      "observerLatencyMs": 1970.732,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    }
+  ],
+  "sampleCount": 12,
+  "samplesTruncated": false,
+  "failedSampleCount": 2,
+  "timing": {
+    "disruptionToAvailabilityObservedMs": 97458.592,
+    "disruptionToFirstSurvivorObservedMs": 67880.513,
+    "note": "Observer timings include Azure Run Command, polling, HTTP, validation and local reporting overhead. Samples are sequential, not continuous outage coverage; no exact RTO or outage duration is measured."
+  },
+  "limitations": [
+    "A successful five-sample survivor window does not prove all clients transitioned.",
+    "ContinuedService means the last baseline response was already from the survivor.",
+    "Recovery requires original replicas, fresh strict origin health and smoke checks, not client moveback.",
+    "No HPA is present in the baseline; no autoscaler or routing configuration is changed.",
+    "Only allow-listed status, region and error categories are stored; no URLs, bodies, headers, pod names or raw exceptions.",
+    "Forced process termination, host loss or an unwritable report destination can prevent final cleanup/reporting."
+  ]
+}

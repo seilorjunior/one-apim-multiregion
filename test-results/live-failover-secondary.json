@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "runId": "c9fb7475-3c8c-4944-b3ab-9ac3e78c7186",
+  "startedAtUtc": "2026-11-05T17:50:10.870Z",
+  "completedAtUtc": "2026-11-05T18:14:55.245Z",
+  "status": "passed",
+  "exitCode": 0,
+  "ingressMode": "private",
+  "target": {
+    "key": "Secondary",
+    "location": "centralus"
+  },
+  "survivor": {
+    "key": "Primary",
+    "location": "westus3"
+  },
+  "timeoutSeconds": 600,
+  "stages": {
+    "readiness": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:50:11.122Z",
+      "completedAtUtc": "2026-11-05T17:53:19.005Z"
+    },
+    "preflightOrigins": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:53:19.408Z",
+      "completedAtUtc": "2026-11-05T17:55:43.082Z"
+    },
+    "rollouts": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:55:43.297Z",
+      "completedAtUtc": "2026-11-05T17:56:16.974Z"
+    },
+    "baseline": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:56:17.178Z",
+      "completedAtUtc": "2026-11-05T17:56:30.298Z"
+    },
+    "disruption": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:56:30.628Z",
+      "completedAtUtc": "2026-11-05T17:56:54.762Z"
+    },
+    "availability": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T17:56:55.155Z",
+      "completedAtUtc": "2026-11-05T18:00:12.448Z"
+    },
+    "restoration": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T18:00:12.682Z",
+      "completedAtUtc": "2026-11-05T18:00:25.658Z"
+    },
+    "replicaVerification": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T18:00:28.172Z",
+      "completedAtUtc": "2026-11-05T18:00:51.242Z"
+    },
+    "recoveryOrigins": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T18:00:52.792Z",
+      "completedAtUtc": "2026-11-05T18:07:49.497Z"
+    },
+    "recoverySmoke": {
+      "status": "passed",
+      "startedAtUtc": "2026-11-05T18:07:50.548Z",
+      "completedAtUtc": "2026-11-05T18:14:54.867Z"
+    }
+  },
+  "replicas": {
+    "original": 2,
+    "stopped": 0,
+    "restored": 2
+  },
+  "evidence": "ObservedTransition",
+  "lastBaselineRegion": "centralus",
+  "samples": [
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:56:17.337Z",
+      "completedAtUtc": "2026-11-05T17:56:19.450Z",
+      "observerLatencyMs": 2113.141,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:56:19.658Z",
+      "completedAtUtc": "2026-11-05T17:56:23.529Z",
+      "observerLatencyMs": 3871.585,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:56:23.731Z",
+      "completedAtUtc": "2026-11-05T17:56:25.689Z",
+      "observerLatencyMs": 1957.865,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:56:25.941Z",
+      "completedAtUtc": "2026-11-05T17:56:27.749Z",
+      "observerLatencyMs": 1807.776,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "baseline",
+      "startedAtUtc": "2026-11-05T17:56:27.995Z",
+      "completedAtUtc": "2026-11-05T17:56:29.948Z",
+      "observerLatencyMs": 1953.818,
+      "status": 200,
+      "region": "centralus",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:56:55.388Z",
+      "completedAtUtc": "2026-11-05T17:57:11.047Z",
+      "observerLatencyMs": 15659.852,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:57:16.297Z",
+      "completedAtUtc": "2026-11-05T17:57:31.667Z",
+      "observerLatencyMs": 15369.868,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:57:36.916Z",
+      "completedAtUtc": "2026-11-05T17:57:52.412Z",
+      "observerLatencyMs": 15496.342,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:57:57.631Z",
+      "completedAtUtc": "2026-11-05T17:58:12.999Z",
+      "observerLatencyMs": 15367.591,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:58:18.324Z",
+      "completedAtUtc": "2026-11-05T17:58:33.632Z",
+      "observerLatencyMs": 15308.018,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:58:38.938Z",
+      "completedAtUtc": "2026-11-05T17:58:54.241Z",
+      "observerLatencyMs": 15303.312,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:58:59.551Z",
+      "completedAtUtc": "2026-11-05T17:59:14.819Z",
+      "observerLatencyMs": 15267.647,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:59:20.092Z",
+      "completedAtUtc": "2026-11-05T17:59:35.376Z",
+      "observerLatencyMs": 15284.146,
+      "status": null,
+      "region": null,
+      "error": "timeout"
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:59:40.867Z",
+      "completedAtUtc": "2026-11-05T17:59:43.149Z",
+      "observerLatencyMs": 2281.589,
+      "status": 200,
+      "region": "westus3",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:59:48.325Z",
+      "completedAtUtc": "2026-11-05T17:59:50.297Z",
+      "observerLatencyMs": 1972.117,
+      "status": 200,
+      "region": "westus3",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T17:59:55.450Z",
+      "completedAtUtc": "2026-11-05T17:59:57.477Z",
+      "observerLatencyMs": 2026.455,
+      "status": 200,
+      "region": "westus3",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T18:00:02.832Z",
+      "completedAtUtc": "2026-11-05T18:00:05.099Z",
+      "observerLatencyMs": 2267.028,
+      "status": 200,
+      "region": "westus3",
+      "error": null
+    },
+    {
+      "phase": "failover",
+      "startedAtUtc": "2026-11-05T18:00:10.313Z",
+      "completedAtUtc": "2026-11-05T18:00:12.205Z",
+      "observerLatencyMs": 1892.587,
+      "status": 200,
+      "region": "westus3",
+      "error": null
+    }
+  ],
+  "sampleCount": 18,
+  "samplesTruncated": false,
+  "failedSampleCount": 8,
+  "timing": {
+    "disruptionToAvailabilityObservedMs": 221821.534,
+    "disruptionToFirstSurvivorObservedMs": 192522.364,
+    "note": "Observer timings include Azure Run Command, polling, HTTP, validation and local reporting overhead. Samples are sequential, not continuous outage coverage; no exact RTO or outage duration is measured."
+  },
+  "limitations": [
+    "A successful five-sample survivor window does not prove all clients transitioned.",
+    "ContinuedService means the last baseline response was already from the survivor.",
+    "Recovery requires original replicas, fresh strict origin health and smoke checks, not client moveback.",
+    "No HPA is present in the baseline; no autoscaler or routing configuration is changed.",
+    "Only allow-listed status, region and error categories are stored; no URLs, bodies, headers, pod names or raw exceptions.",
+    "Forced process termination, host loss or an unwritable report destination can prevent final cleanup/reporting."
+  ]
+}
