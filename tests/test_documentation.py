@@ -26,8 +26,10 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("security/advisories/new", security)
 
     def test_all_runbook_file_links_exist(self):
-        for doc in (ROOT / name for name in (
-                "README.md", "diagrams/README.md", "CONTRIBUTING.md", "SECURITY.md")):
+        documents = [ROOT / name for name in (
+            "README.md", "diagrams/README.md", "CONTRIBUTING.md", "SECURITY.md")]
+        documents.extend((ROOT / "docs").glob("*.md"))
+        for doc in documents:
             for link in re.findall(r'!?\[[^\]]*\]\(([^)]+)\)', doc.read_text(encoding="utf-8")):
                 if "://" in link or link.startswith("#"):
                     continue
