@@ -218,6 +218,7 @@ function Invoke-TestCase {
     $testScripts = Join-Path $testWork 'scripts\powershell'
     $null = New-Item -ItemType Directory -Path $testScripts -Force
     Copy-Item (Join-Path $root 'scripts\failover_report.py') (Join-Path $testWork 'scripts\failover_report.py')
+    Copy-Item (Join-Path $root 'scripts\lab_contracts.py') (Join-Path $testWork 'scripts\lab_contracts.py')
     Get-ChildItem (Join-Path $root 'scripts\powershell') -Filter '*.ps1' | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination $testScripts
     }

@@ -76,48 +76,20 @@ lab_private_readiness() {
     return 0
 }
 lab_ingress_configuration() {
-    LAB_ENV[APP_GATEWAY_KEY_VAULT_NETWORK_MODE]="${LAB_ENV[APP_GATEWAY_KEY_VAULT_NETWORK_MODE]-trusted-services}"
-    [[ "${LAB_ENV[APP_GATEWAY_KEY_VAULT_NETWORK_MODE]}" == trusted-services || "${LAB_ENV[APP_GATEWAY_KEY_VAULT_NETWORK_MODE]}" == private-endpoints ]] || {
-        lab_error "APP_GATEWAY_KEY_VAULT_NETWORK_MODE must be trusted-services or private-endpoints."; return 1;
-    }
-    LAB_ENV[APP_INGRESS_MODE]="${LAB_ENV[APP_INGRESS_MODE]-public}"
-    [[ "${LAB_ENV[APP_INGRESS_MODE]}" == public || "${LAB_ENV[APP_INGRESS_MODE]}" == private ]] || {
-        lab_error "APP_INGRESS_MODE must be public or private."; return 1;
-    }
-    [[ "${LAB_ENV[APP_GATEWAY_NETWORK_MODE]-auto}" == auto || "${LAB_ENV[APP_GATEWAY_NETWORK_MODE]-auto}" == retain ]] || {
-        lab_error "APP_GATEWAY_NETWORK_MODE must be auto or retain."; return 1;
-    }
-    if [[ "${LAB_ENV[APP_INGRESS_MODE]}" == public && -n "${LAB_ENV[APP_GATEWAY_PRIMARY_ID]:-}" && "${LAB_ENV[APP_GATEWAY_NETWORK_MODE]:-auto}" != retain ]]; then
-        lab_error "Set APP_GATEWAY_NETWORK_MODE to retain before rollback. In-use Application Gateway subnets cannot be removed."; return 1
-    fi
-    [[ "${LAB_ENV[APP_INGRESS_MODE]}" == private ]] || return 0
-    LAB_ENV[APP_GATEWAY_NETWORK_MODE]=retain
-    local key name region host
-    for key in PRIMARY SECONDARY; do
-        name="APP_GATEWAY_${key}_HOST"
-        if [[ -z "${LAB_ENV[$name]:-}" ]]; then
-            lab_assert_values APP_GATEWAY_DNS_SUFFIX AZURE_LOCATION AZURE_SECONDARY_LOCATION
-            if [[ "$key" == PRIMARY ]]; then region="${LAB_ENV[AZURE_LOCATION]}"; else region="${LAB_ENV[AZURE_SECONDARY_LOCATION]}"; fi
-            LAB_ENV["$name"]="gw-$region.${LAB_ENV[APP_GATEWAY_DNS_SUFFIX]}"
-        fi
-        host="${LAB_ENV[$name],,}"
-        "$LAB_PYTHON" -c '
-import re, sys
-host = sys.argv[1]
-if len(host) > 253 or not re.fullmatch(r"([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}", host) or re.search(r"(^|\.)((example\.(com|net|org))|invalid|test|localhost|internal|azure-api\.net|azurefd\.net)$", host):
-    raise ValueError("Gateway hostname must be under a domain you control and covered by a publicly trusted certificate.")
-' "$host" || return
-        LAB_ENV["$name"]="$host"
+    local name value result updates
+    local -a values=()
+    for name in APP_INGRESS_MODE APP_GATEWAY_NETWORK_MODE APP_GATEWAY_KEY_VAULT_NETWORK_MODE \
+        APP_GATEWAY_PRIMARY_ID APP_GATEWAY_PRIMARY_HOST APP_GATEWAY_SECONDARY_HOST \
+        APP_GATEWAY_DNS_SUFFIX AZURE_LOCATION AZURE_SECONDARY_LOCATION \
+        APP_GATEWAY_KEY_VAULT_NAME APP_GATEWAY_KEY_VAULT_RESOURCE_GROUP APP_GATEWAY_CERTIFICATE_SECRET_ID; do
+        [[ ! -v "LAB_ENV[$name]" ]] || values+=("$name" "${LAB_ENV[$name]}")
     done
-    [[ "${LAB_ENV[APP_GATEWAY_PRIMARY_HOST]}" != "${LAB_ENV[APP_GATEWAY_SECONDARY_HOST]}" ]] || {
-        lab_error "Application Gateway regional hostnames must be distinct."; return 1;
-    }
-    lab_assert_values APP_GATEWAY_KEY_VAULT_NAME APP_GATEWAY_KEY_VAULT_RESOURCE_GROUP APP_GATEWAY_CERTIFICATE_SECRET_ID
-    [[ "${LAB_ENV[APP_GATEWAY_CERTIFICATE_SECRET_ID]}" =~ ^https://([a-z0-9-]+)\.vault\.azure\.net/secrets/([a-zA-Z0-9-]+)/?$ &&
-        "${BASH_REMATCH[1]}" == "${LAB_ENV[APP_GATEWAY_KEY_VAULT_NAME]}" ]] || {
-        lab_error "APP_GATEWAY_CERTIFICATE_SECRET_ID must be a versionless secret URI in the configured Key Vault."; return 1;
-    }
-    LAB_ENV[APP_GATEWAY_CERTIFICATE_SECRET_ID]="${LAB_ENV[APP_GATEWAY_CERTIFICATE_SECRET_ID]%/}"
+    result="$("$LAB_PYTHON" -c 'import json, sys; print(json.dumps(dict(zip(sys.argv[1::2], sys.argv[2::2]))))' "${values[@]}" |
+        "$LAB_PYTHON" "$LAB_SCRIPT_DIR/../lab_contracts.py" ingress)" || return
+    updates="$("$LAB_PYTHON" -c 'import json, sys; [print(key + "\t" + value) for key, value in json.load(sys.stdin).items()]' <<< "$result")" || return
+    while IFS=$'\t' read -r name value; do
+        LAB_ENV["$name"]="$value"
+    done <<< "$updates"
 }
 lab_gateway_certificate() {
     local tls="$1" raw name leaf="$LAB_TMP/gateway-public.cer" issuer subject root_subject
@@ -583,20 +555,9 @@ lab_assert_tls() {
 }
 lab_base64() { openssl base64 -A -in "$1"; }
 lab_manifest() {
-    "$LAB_PYTHON" -c '
-import base64, hashlib, pathlib, re, sys
-template, tls, region, cluster, ip, subnet = sys.argv[1:]
-text = pathlib.Path(template).read_text(encoding="utf-8")
-values = {"REGION": region, "CLUSTER": cluster, "BACKEND_IP": ip, "APIM_SUBNET": subnet}
-for key, name in (("TLS_CERTIFICATE", "tls.crt"), ("TLS_KEY", "tls.key")):
-    values[key] = base64.b64encode((pathlib.Path(tls) / name).read_bytes()).decode()
-for key, value in values.items():
-    text = text.replace("__" + key + "__", value)
-text = text.replace("__WORKLOAD_HASH__", hashlib.sha256(text.encode("utf-8")).hexdigest())
-if re.search(r"__[A-Z_]+__", text):
-    raise ValueError("Unresolved workload placeholder")
-print(text, end="")
-' "$LAB_ROOT/src/lab-api/workload.yaml" "$1" "$LAB_LOCATION" "$LAB_CLUSTER" "$LAB_BACKEND_IP" "$LAB_APIM_SUBNET"
+    "$LAB_PYTHON" "$LAB_SCRIPT_DIR/../lab_contracts.py" manifest --text \
+        --template "$LAB_ROOT/src/lab-api/workload.yaml" --tls "$1" \
+        --region "$LAB_LOCATION" --cluster "$LAB_CLUSTER" --ip "$LAB_BACKEND_IP" --subnet "$LAB_APIM_SUBNET"
 }
 lab_http() {
     local method="$1" url="$2" timeout="${3:-30}" status
@@ -631,63 +592,8 @@ print(body["region"] + "\t" + body["cluster"] + "\t" + body["pod"] + "\t" + gate
 }
 lab_now() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 lab_origin_evidence() {
-    "$LAB_PYTHON" -c '
-import datetime as dt, json, math, sys
-def timestamp(value):
-    result = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
-    if result.tzinfo is None:
-        raise ValueError("Origin timestamps require a timezone")
-    return result.timestamp()
-raw, since, now, group, *hosts = sys.argv[1:]
-metrics = json.loads(raw)
-items = [m for m in metrics["value"] if m["name"]["value"] == "OriginHealthPercentage"]
-if len(items) != 1:
-    raise ValueError("Expected exactly one OriginHealthPercentage metric")
-metric = items[0]
-if metric.get("errorCode", "Success") != "Success":
-    raise ValueError("Origin health metric error: " + metric["errorCode"])
-since, now = timestamp(since), timestamp(now)
-minimum = math.ceil(since / 60) * 60
-reasons, evidence = [], []
-for host in hosts:
-    expected = host.lower() + ":443"
-    series = []
-    for item in metric["timeseries"]:
-        dims = {v["name"]["value"]: v["value"] for v in item["metadatavalues"]}
-        if dims.get("Origin", "").lower() == expected and dims.get("OriginGroup") == group:
-            series.append(item)
-    if len(series) > 1:
-        raise ValueError("Duplicate metric series for " + expected)
-    if not series:
-        reasons.append(host + ": missing origin metric series")
-        continue
-    points = sorted((p for p in series[0]["data"]
-                     if minimum <= timestamp(p["timeStamp"]) and timestamp(p["timeStamp"]) + 60 <= now),
-                    key=lambda p: timestamp(p["timeStamp"]))
-    if len(points) < 2:
-        reasons.append(host + ": need two completed one-minute buckets after the requested boundary")
-        continue
-    previous, last = points[-2:]
-    last_time = timestamp(last["timeStamp"])
-    if last_time - timestamp(previous["timeStamp"]) != 60 or now - last_time > 300:
-        reasons.append(host + ": origin evidence is stale or not consecutive")
-        continue
-    healthy = True
-    for point in (previous, last):
-        value = point.get("minimum")
-        if value is None:
-            healthy = False
-            continue
-        if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 100:
-            raise ValueError("Invalid origin health percentage for " + host)
-        if value != 100:
-            healthy = False
-    if not healthy:
-        reasons.append(host + ": both completed buckets must report minimum=100; missing data is not healthy")
-        continue
-    evidence.append({"origin": expected, "latestBucketUtc": last["timeStamp"], "minimumPercent": 100})
-print(json.dumps({"status": "healthy" if not reasons else "waiting", "reasons": reasons, "origins": evidence}))
-' "$1" "$2" "$3" "${LAB_ENV[FRONT_DOOR_ORIGIN_GROUP]:-regional-apis}" \
+    "$LAB_PYTHON" "$LAB_SCRIPT_DIR/../lab_contracts.py" origins \
+        --since "$2" --now "$3" --group "${LAB_ENV[FRONT_DOOR_ORIGIN_GROUP]:-regional-apis}" --hosts \
         "${LAB_ENV[FRONT_DOOR_PRIMARY_ORIGIN_HOST]:-${LAB_ENV[APIM_PRIMARY_HOST]}}" \
-        "${LAB_ENV[FRONT_DOOR_SECONDARY_ORIGIN_HOST]:-${LAB_ENV[APIM_SECONDARY_HOST]}}"
+        "${LAB_ENV[FRONT_DOOR_SECONDARY_ORIGIN_HOST]:-${LAB_ENV[APIM_SECONDARY_HOST]}}" <<< "$1"
 }

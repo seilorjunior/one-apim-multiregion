@@ -382,6 +382,7 @@ fi
         project = self.directory / "isolated-project"
         script_directory = project / "scripts" / "bash"
         shutil.copytree(SCRIPTS, script_directory)
+        shutil.copy2(ROOT / "scripts" / "lab_contracts.py", script_directory.parent)
         workload = project / "src" / "lab-api"
         workload.mkdir(parents=True)
         shutil.copy(ROOT / "src" / "lab-api" / "workload.yaml", workload)
@@ -471,6 +472,7 @@ fi
         project = self.directory / "provision-project"
         script_directory = project / "scripts" / "bash"
         shutil.copytree(SCRIPTS, script_directory)
+        shutil.copy2(ROOT / "scripts" / "lab_contracts.py", script_directory.parent)
         self.run_script("Provision-Lab.sh", "--start-resources", "--wait-seconds", "30",
             scenario="startup_start_error", success=False, script_directory=script_directory)
         self.assertFalse(any(call[:2] == ["azd", "provision"] for call in self.state["calls"]))
@@ -605,6 +607,7 @@ fi
         project = self.directory / "private-project"
         script_directory = project / "scripts" / "bash"
         shutil.copytree(SCRIPTS, script_directory)
+        shutil.copy2(ROOT / "scripts" / "lab_contracts.py", script_directory.parent)
         shutil.copy2(ROOT / "scripts" / "failover_report.py", script_directory.parent)
         common = script_directory / "Lab.Common.sh"
         with common.open("a", encoding="utf-8", newline="\n") as handle:

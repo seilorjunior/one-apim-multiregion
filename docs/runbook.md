@@ -196,7 +196,12 @@ pipeline with private connectivity and dedicated RBAC.
 ### Script folders and shell requirements
 
 Equivalent entrypoints are separated by shell. Readiness uses one shared
-Python engine to prevent PowerShell/Bash state-machine drift:
+Python engine to prevent PowerShell/Bash state-machine drift. Both shells also
+use [shared offline contracts](../scripts/lab_contracts.py) for ingress
+configuration, workload rendering/checksums, and strict origin-health evidence.
+The adapters preserve their existing return shapes and command-line options.
+Azure operations, local certificate trust checks, confirmations, and cleanup
+remain in their respective shell implementations:
 
 | Workflow | PowerShell | Bash |
 |---|---|---|

@@ -33,6 +33,30 @@ function Assert-LabValues {
     }
 }
 
+function Get-LabPython {
+    foreach ($name in @('python', 'python3')) {
+        $candidate = Get-Command $name -ErrorAction SilentlyContinue
+        if ($candidate) {
+            & $candidate.Source -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)'
+            if ($LASTEXITCODE -eq 0) { return $candidate.Source }
+        }
+    }
+    throw 'Lab checks require Python 3.9 or newer in both shells.'
+}
+
+function Invoke-LabContract {
+    param([string[]] $Arguments, [psobject] $InputValues)
+    $python = Get-LabPython
+    $script = Join-Path $PSScriptRoot '..\lab_contracts.py'
+    $result = if ($null -ne $InputValues) {
+        $InputValues | ConvertTo-Json -Depth 100 -Compress | & $python $script @Arguments
+    } else {
+        & $python $script @Arguments
+    }
+    if ($LASTEXITCODE -ne 0) { throw 'Shared lab contract failed; resolve the reported validation error.' }
+    return ($result -join "`n") | ConvertFrom-Json -AsHashtable
+}
+
 function Invoke-LabReadiness {
     param(
         [hashtable] $Values,
@@ -40,15 +64,7 @@ function Invoke-LabReadiness {
         [switch] $StartResources,
         [ValidateRange(30, 7200)][int] $WaitSeconds = 1800
     )
-    $python = $null
-    foreach ($name in @('python', 'python3')) {
-        $candidate = Get-Command $name -ErrorAction SilentlyContinue
-        if ($candidate) {
-            & $candidate.Source -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)'
-            if ($LASTEXITCODE -eq 0) { $python = $candidate.Source; break }
-        }
-    }
-    if (-not $python) { throw 'Readiness checks require Python 3.9 or newer in both shells.' }
+    $python = Get-LabPython
     Assert-LabValues $Values @('AZURE_ENV_NAME')
     $arguments = @((Join-Path $PSScriptRoot '..\lab_readiness.py'), '--stage', $Stage, '--wait-seconds', "$WaitSeconds", '--environment-name', $Values.AZURE_ENV_NAME)
     if ($StartResources) { $arguments += '--start-resources' }
@@ -75,42 +91,8 @@ function Invoke-LabPrivateReadiness {
 
 function Set-LabIngressConfiguration {
     param([hashtable] $Values)
-    if (-not $Values.ContainsKey('APP_GATEWAY_KEY_VAULT_NETWORK_MODE')) { $Values.APP_GATEWAY_KEY_VAULT_NETWORK_MODE = 'trusted-services' }
-    if ($Values.APP_GATEWAY_KEY_VAULT_NETWORK_MODE -notin @('trusted-services', 'private-endpoints')) {
-        throw 'APP_GATEWAY_KEY_VAULT_NETWORK_MODE must be trusted-services or private-endpoints.'
-    }
-    if (-not $Values.ContainsKey('APP_INGRESS_MODE')) { $Values.APP_INGRESS_MODE = 'public' }
-    if ($Values.APP_INGRESS_MODE -notin @('public', 'private')) { throw 'APP_INGRESS_MODE must be public or private.' }
-    if ($Values.ContainsKey('APP_GATEWAY_NETWORK_MODE') -and $Values.APP_GATEWAY_NETWORK_MODE -notin @('auto', 'retain')) {
-        throw 'APP_GATEWAY_NETWORK_MODE must be auto or retain.'
-    }
-    if ($Values.APP_INGRESS_MODE -eq 'public' -and
-        $Values.ContainsKey('APP_GATEWAY_PRIMARY_ID') -and $Values.APP_GATEWAY_PRIMARY_ID -and
-        (-not $Values.ContainsKey('APP_GATEWAY_NETWORK_MODE') -or $Values.APP_GATEWAY_NETWORK_MODE -ne 'retain')) {
-        throw 'Set APP_GATEWAY_NETWORK_MODE to retain before rollback. In-use Application Gateway subnets cannot be removed.'
-    }
-    if ($Values.APP_INGRESS_MODE -eq 'public') { return }
-    $Values.APP_GATEWAY_NETWORK_MODE = 'retain'
-    foreach ($key in @('PRIMARY', 'SECONDARY')) {
-        $name = "APP_GATEWAY_${key}_HOST"
-        if (-not $Values.ContainsKey($name) -or [string]::IsNullOrWhiteSpace($Values[$name])) {
-            Assert-LabValues $Values @('APP_GATEWAY_DNS_SUFFIX', 'AZURE_LOCATION', 'AZURE_SECONDARY_LOCATION')
-            $region = if ($key -eq 'PRIMARY') { $Values.AZURE_LOCATION } else { $Values.AZURE_SECONDARY_LOCATION }
-            $Values[$name] = "gw-$region.$($Values.APP_GATEWAY_DNS_SUFFIX)"
-        }
-        $Values[$name] = $Values[$name].ToLowerInvariant()
-        if ($Values[$name] -notmatch '^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' -or
-            $Values[$name] -match '(^|\.)((example\.(com|net|org))|invalid|test|localhost|internal|azure-api\.net|azurefd\.net)$') {
-            throw "$name must be a hostname under a domain you control, covered by a publicly trusted certificate."
-        }
-    }
-    if ($Values.APP_GATEWAY_PRIMARY_HOST -eq $Values.APP_GATEWAY_SECONDARY_HOST) { throw 'Application Gateway regional hostnames must be distinct.' }
-    Assert-LabValues $Values @('APP_GATEWAY_KEY_VAULT_NAME', 'APP_GATEWAY_KEY_VAULT_RESOURCE_GROUP', 'APP_GATEWAY_CERTIFICATE_SECRET_ID')
-    if ($Values.APP_GATEWAY_CERTIFICATE_SECRET_ID -notmatch '^https://([a-z0-9-]+)\.vault\.azure\.net/secrets/([a-zA-Z0-9-]+)/?$' -or
-        $Matches[1] -ne $Values.APP_GATEWAY_KEY_VAULT_NAME) {
-        throw 'APP_GATEWAY_CERTIFICATE_SECRET_ID must be a versionless secret URI in the configured Key Vault.'
-    }
-    $Values.APP_GATEWAY_CERTIFICATE_SECRET_ID = $Values.APP_GATEWAY_CERTIFICATE_SECRET_ID.TrimEnd('/')
+    $updates = Invoke-LabContract @('ingress') $Values
+    foreach ($name in $updates.Keys) { $Values[$name] = $updates[$name] }
 }
 
 function Assert-LabGatewayCertificate {
@@ -655,24 +637,12 @@ function New-LabManifest {
         [string] $TlsDirectory,
         [psobject] $Region
     )
-    $manifest = [IO.File]::ReadAllText($Template).Replace("`r`n", "`n").Replace("`r", "`n")
-    $replacements = @{
-        '__REGION__' = $Region.Location
-        '__CLUSTER__' = $Region.Cluster
-        '__BACKEND_IP__' = $Region.BackendIp
-        '__APIM_SUBNET__' = $Region.ApimSubnet
-        '__TLS_CERTIFICATE__' = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $TlsDirectory 'tls.crt')))
-        '__TLS_KEY__' = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $TlsDirectory 'tls.key')))
-    }
-    foreach ($entry in $replacements.GetEnumerator()) {
-        $manifest = $manifest.Replace($entry.Key, $entry.Value)
-    }
-    $hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($manifest))).ToLowerInvariant()
-    $manifest = $manifest.Replace('__WORKLOAD_HASH__', $hash)
-    if ($manifest -match '__[A-Z_]+__') {
-        throw "Unresolved workload placeholder: $($Matches[0])"
-    }
-    return $manifest
+    $result = Invoke-LabContract @(
+        'manifest', '--template', $Template, '--tls', $TlsDirectory,
+        '--region', $Region.Location, '--cluster', $Region.Cluster,
+        '--ip', $Region.BackendIp, '--subnet', $Region.ApimSubnet
+    )
+    return $result.manifest
 }
 
 function Test-LabResponse {
@@ -707,63 +677,16 @@ function Test-LabOriginMetrics {
         [DateTimeOffset] $Now,
         [string] $OriginGroup = 'regional-apis'
     )
-    $metric = @($Metrics.value | Where-Object { $_.name.value -eq 'OriginHealthPercentage' })
-    if ($metric.Count -ne 1) { throw 'Expected exactly one OriginHealthPercentage metric.' }
-    if ($metric[0].PSObject.Properties['errorCode'] -and $metric[0].errorCode -ne 'Success') {
-        throw "Origin health metric error: $($metric[0].errorCode)"
-    }
-    $minimumTimestamp = $Since.ToUnixTimeSeconds()
-    if ($Since.UtcTicks % [TimeSpan]::TicksPerMinute -ne 0) {
-        $minimumTimestamp += 60 - ($minimumTimestamp % 60)
-    }
-    $reasons = [Collections.Generic.List[string]]::new()
-    $evidence = foreach ($hostName in $Hosts) {
-        $series = @($metric[0].timeseries | Where-Object {
-            $dimensions = @{}
-            foreach ($dimension in $_.metadatavalues) { $dimensions[$dimension.name.value] = $dimension.value }
-            $dimensions['Origin'] -eq "${hostName}:443" -and $dimensions['OriginGroup'] -eq $OriginGroup
-        })
-        if ($series.Count -gt 1) { throw "Duplicate metric series for ${hostName}:443." }
-        if ($series.Count -eq 0) {
-            $reasons.Add("${hostName}: missing origin metric series")
-            continue
+    $result = Invoke-LabContract @(
+        'origins', '--since', $Since.ToString('o'), '--now', $Now.ToString('o'),
+        '--group', $OriginGroup, '--hosts', $Hosts[0], $Hosts[1]
+    ) $Metrics
+    $evidence = @($result.origins | ForEach-Object {
+        [pscustomobject]@{
+            Origin = $_.origin
+            LatestBucketUtc = [DateTimeOffset] $_.latestBucketUtc
+            MinimumPercent = $_.minimumPercent
         }
-        $points = @($series[0].data | Where-Object {
-            $timestamp = ([DateTimeOffset] $_.timeStamp).ToUnixTimeSeconds()
-            $timestamp -ge $minimumTimestamp -and $timestamp + 60 -le $Now.ToUnixTimeSeconds()
-        } | Sort-Object { ([DateTimeOffset] $_.timeStamp).ToUnixTimeSeconds() })
-        if ($points.Count -lt 2) {
-            $reasons.Add("${hostName}: need two completed one-minute buckets after $($Since.ToString('o'))")
-            continue
-        }
-        $last = $points[-1]
-        $previous = $points[-2]
-        $lastTime = ([DateTimeOffset] $last.timeStamp).ToUnixTimeSeconds()
-        $previousTime = ([DateTimeOffset] $previous.timeStamp).ToUnixTimeSeconds()
-        if ($lastTime - $previousTime -ne 60 -or ($Now - [DateTimeOffset] $last.timeStamp).TotalSeconds -gt 300) {
-            $reasons.Add("${hostName}: origin evidence is stale or not consecutive")
-            continue
-        }
-        $healthy = $true
-        foreach ($point in @($previous, $last)) {
-            if (-not $point.PSObject.Properties['minimum'] -or $null -eq $point.minimum) {
-                $healthy = $false
-                continue
-            }
-            if ($point.minimum -isnot [ValueType] -or $point.minimum -is [bool]) {
-                throw "Invalid origin health percentage for $hostName."
-            }
-            $percentage = [double] $point.minimum
-            if (-not [double]::IsFinite($percentage) -or $percentage -lt 0 -or $percentage -gt 100) {
-                throw "Invalid origin health percentage for $hostName."
-            }
-            if ($percentage -ne 100) { $healthy = $false }
-        }
-        if (-not $healthy) {
-            $reasons.Add("${hostName}: both completed buckets must report minimum=100; missing data is not healthy")
-            continue
-        }
-        [pscustomobject]@{ Origin = "${hostName}:443"; LatestBucketUtc = [DateTimeOffset] $last.timeStamp; MinimumPercent = 100 }
-    }
-    return [pscustomobject]@{ Healthy = $reasons.Count -eq 0; Reasons = $reasons.ToArray(); Origins = @($evidence) }
+    })
+    return [pscustomobject]@{ Healthy = $result.status -eq 'healthy'; Reasons = @($result.reasons); Origins = $evidence }
 }

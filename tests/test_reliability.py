@@ -1,5 +1,6 @@
 """Shared offline contracts for PowerShell/Bash rollout and origin evidence."""
 import copy
+import datetime as dt
 import json
 import os
 from pathlib import Path
@@ -55,6 +56,7 @@ $result | ConvertTo-Json -Depth 10 -Compress
         script = self.directory / "test.ps1"
         script.write_text(ps, encoding="utf-8")
         outputs = []
+        evidence = []
         commands = [
             [PWSH, "-NoProfile", "-File", str(script),
              str(ROOT / "scripts" / "powershell" / "Lab.Common.ps1"), str(fixture), since, now, *hosts, group],
@@ -75,7 +77,23 @@ lab_origin_evidence "$(< "$2")" "$3" "$4"
             else:
                 body = json.loads(result.stdout)
                 outputs.append(body.get("Healthy", body.get("status") == "healthy"))
+                if "Healthy" in body:
+                    self.assertIsInstance(body["Healthy"], bool)
+                    self.assertEqual(set(body), {"Healthy", "Reasons", "Origins"})
+                    body = {
+                        "status": "healthy" if body["Healthy"] else "waiting",
+                        "reasons": body["Reasons"],
+                        "origins": [{"origin": item["Origin"], "latestBucketUtc": item["LatestBucketUtc"],
+                                     "minimumPercent": item["MinimumPercent"]} for item in body["Origins"]],
+                    }
+                self.assertEqual(set(body), {"status", "reasons", "origins"})
+                for item in body["origins"]:
+                    item["latestBucketUtc"] = dt.datetime.fromisoformat(
+                        item["latestBucketUtc"].replace("Z", "+00:00")).astimezone(dt.timezone.utc).isoformat()
+                evidence.append(body)
         self.assertEqual(outputs[0], outputs[1], f"Shell behavior differs: {outputs}")
+        if len(evidence) == 2:
+            self.assertEqual(evidence[0], evidence[1], "Shell evidence shapes differ")
         return outputs[0]
 
     def test_both_origins_require_two_recent_complete_healthy_buckets(self):
